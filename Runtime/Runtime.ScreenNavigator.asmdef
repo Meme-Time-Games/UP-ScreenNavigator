@@ -1,10 +1,10 @@
 {
-    "name": "Editor",
+    "name": "Runtime.ScreenNavigator",
     "rootNamespace": "",
-    "references": [],
-    "includePlatforms": [
-        "Editor"
+    "references": [
+        "GUID:9a76a9735bcf4cf41b5bd1360c395383"
     ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
