@@ -13,7 +13,6 @@ namespace ScreenNavigators.Core
         
         protected override ScreenActionNotifier GetData()
         {
-            Debug.LogError("Add ScreenDataSO");
             return GetScreenActionNotifier(_screenNavigator, _screenDataSo.ScreenId);
         }
 

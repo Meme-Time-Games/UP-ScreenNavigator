@@ -27,7 +27,7 @@ namespace ScreenNavigators.Core
             string[] closeScreenIds = new string[_closeScreens.Length];
             for (int i = 0; i < _closeScreens.Length; i++)
             {
-                nestedScreenIds[i] = _closeScreens[i].ScreenId;
+                closeScreenIds[i] = _closeScreens[i].ScreenId;
             }
             
             return new ScreenData(_screenId, nestedScreenIds, closeScreenIds, _isLocked, _hasToCloseAllScreensOnOpen);

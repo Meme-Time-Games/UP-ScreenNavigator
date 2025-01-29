@@ -61,7 +61,7 @@ namespace ScreenNavigators.Core
         
         private void CloseAllScreens()
         {
-            IEnumerable<KeyValuePair<string, ScreenData>> allOpenedScreens = _openedScreens;
+            IEnumerable<KeyValuePair<string, ScreenData>> allOpenedScreens = new List<KeyValuePair<string, ScreenData>>(_openedScreens);
             foreach (var screenDataKeyValuePair in allOpenedScreens)
             {
                 CloseScreen(screenDataKeyValuePair.Key);
@@ -72,10 +72,12 @@ namespace ScreenNavigators.Core
         {
             ScreenData screenData = _screensRepository.GetById(screenId);
             if (!_openedScreens.ContainsKey(screenData.ScreenId))
-                throw new Exception("Screen with id " + screenId + " is not opened.");
+                return;
             
             CloseNestedScreens(screenData.NestedScreenIds);
-            _openedScreens.Remove(screenData.ScreenId);
+            _openedScreens.Remove(screenId);
+            
+            OnScreenClosed?.Invoke(screenId);
         }
 
         private void CloseNestedScreens(string[] nestedScreens)
