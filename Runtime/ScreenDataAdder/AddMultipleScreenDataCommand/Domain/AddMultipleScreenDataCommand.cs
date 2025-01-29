@@ -6,11 +6,16 @@ namespace ScreenNavigators.Core
     {
         private readonly IScreenNavigator _screenNavigator;
         private readonly ScreenData[] _screenData;
+        private readonly bool _addOnInit;
 
-        public AddMultipleScreenDataCommand(IScreenNavigator screenNavigator, ScreenData[] screenData)
+        public AddMultipleScreenDataCommand(IScreenNavigator screenNavigator, ScreenData[] screenData, bool addOnInit)
         {
             _screenNavigator = screenNavigator;
             _screenData = screenData;
+            _addOnInit = addOnInit;
+
+            if(_addOnInit)
+                Execute();
         }
 
         public void Execute()

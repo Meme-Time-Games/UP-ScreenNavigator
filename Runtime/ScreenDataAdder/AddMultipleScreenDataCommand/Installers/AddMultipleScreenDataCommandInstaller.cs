@@ -8,8 +8,11 @@ namespace ScreenNavigators.Core
     {
         [Header("References")] 
         [SerializeField] private ScreenDataSO[] _screensDataSo;
+
+        [Header("Config")]
+        [SerializeField] private bool _addOnInit;
         
-        [Inject] private readonly IScreenNavigator _screenNavigator;
+        [Inject] private IScreenNavigator _screenNavigator;
         
         protected override ICommand GetData()
         {
@@ -20,7 +23,7 @@ namespace ScreenNavigators.Core
                 screensData[i] = _screensDataSo[i].GetScreenData();
             }
             
-            return new AddMultipleScreenDataCommand(_screenNavigator, screensData);
+            return new AddMultipleScreenDataCommand(_screenNavigator, screensData, _addOnInit);
         }
     }
 }
