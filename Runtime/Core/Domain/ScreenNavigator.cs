@@ -37,25 +37,25 @@ namespace ScreenNavigators.Core
             
             _openedScreens.Add(screenId, screenData);
             
-            OpenNestedScreens(screenData.NestedScreens);
-            CloseScreens(screenData.CloseScreens);
+            OpenNestedScreens(screenData.NestedScreenIds);
+            CloseScreens(screenData.CloseScreenIds);
             
             OnScreenOpened?.Invoke(screenData.ScreenId);
         }
 
-        private void OpenNestedScreens(ScreenData[] nestedScreens)
+        private void OpenNestedScreens(string[] nestedScreens)
         {
-            foreach (var screenData in nestedScreens)
+            foreach (var screenId in nestedScreens)
             {
-                OpenScreen(screenData.ScreenId);
+                OpenScreen(screenId);
             }
         }
         
-        private void CloseScreens(ScreenData[] closeScreens)
+        private void CloseScreens(string[] closeScreens)
         {
-            foreach (var screenData in closeScreens)
+            foreach (var screenId in closeScreens)
             {
-                CloseScreen(screenData.ScreenId);
+                CloseScreen(screenId);
             }
         }
         
@@ -74,16 +74,22 @@ namespace ScreenNavigators.Core
             if (!_openedScreens.ContainsKey(screenData.ScreenId))
                 throw new Exception("Screen with id " + screenId + " is not opened.");
             
-            CloseNestedScreens(screenData.NestedScreens);
+            CloseNestedScreens(screenData.NestedScreenIds);
             _openedScreens.Remove(screenData.ScreenId);
         }
 
-        private void CloseNestedScreens(ScreenData[] nestedScreens)
+        private void CloseNestedScreens(string[] nestedScreens)
         {
-            foreach (var screenData in nestedScreens)
+            foreach (var screenId in nestedScreens)
             {
-                if (_openedScreens.ContainsKey(screenData.ScreenId) && !screenData.IsLocked)
-                    CloseScreen(screenData.ScreenId);
+                if (!_openedScreens.ContainsKey(screenId))
+                    continue;
+                
+                ScreenData screenData = _screensRepository.GetById(screenId);
+                if (screenData.IsLocked)
+                    continue;
+                
+                CloseScreen(screenId);
             }
         }
     }
