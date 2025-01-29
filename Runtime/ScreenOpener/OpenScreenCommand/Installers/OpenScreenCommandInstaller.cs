@@ -6,8 +6,8 @@ namespace ScreenNavigators.Core
 {
     public class OpenScreenCommandInstaller : CommandInstaller
     {
-        [Header("References")]
-        private readonly ScreenDataSO _screenDataSo;
+        [Header("References")] 
+        [SerializeField] private ScreenDataSO _screenDataSo;
         
         [Inject] private IScreenNavigator _screenNavigator;
         

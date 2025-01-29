@@ -6,15 +6,15 @@ namespace ScreenNavigators.Core
 {
     public abstract class ScreenActionNotifierInstaller : SingleMonoInstaller<ScreenActionNotifier>
     {
-        [Header("References")]
-        [SerializeField] private string _screenIdToOpen;
+        [Header("References")] 
+        [SerializeField] private ScreenDataSO _screenDataSo;
         
         [Inject] private IScreenNavigator _screenNavigator;
         
         protected override ScreenActionNotifier GetData()
         {
             Debug.LogError("Add ScreenDataSO");
-            return GetScreenActionNotifier(_screenNavigator, _screenIdToOpen);
+            return GetScreenActionNotifier(_screenNavigator, _screenDataSo.ScreenId);
         }
 
         protected abstract ScreenActionNotifier GetScreenActionNotifier(IScreenNavigator screenNavigator, string screenIdToOpen);
