@@ -1,5 +1,5 @@
 {
-  "name": "com.mtg.screennavigator",
+  "name": "com.custom.screennavigator",
   "version": "1.0.0",
   "displayName": "ScreenNavigator",
   "description": "",
@@ -11,7 +11,7 @@
   "keywords": [
   ],
   "author": {
-    "name": "MTG",
+    "name": "custom",
     "email": "",
     "url": ""
   },
@@ -22,7 +22,7 @@
 	{
 		"displayName": "Samples",
 		"description": "",
-		"path": "Samples~/"
+		"path": "Samples~/ScreenNavigator"
 	}
 ]
 }
