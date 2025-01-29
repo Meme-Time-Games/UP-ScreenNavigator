@@ -2,12 +2,12 @@
 
 namespace ScreenNavigators.Core
 {
-    public abstract class ScreenActioner : IDisposable
+    public abstract class ScreenActionNotifier : IDisposable
     {
         private readonly IScreenNavigator _screenNavigator;
         private readonly string _screenIdToOpen;
 
-        protected ScreenActioner(IScreenNavigator screenNavigator, string screenIdToOpen)
+        protected ScreenActionNotifier(IScreenNavigator screenNavigator, string screenIdToOpen)
         {
             _screenNavigator = screenNavigator;
             _screenIdToOpen = screenIdToOpen;

@@ -2,28 +2,28 @@
 
 namespace ScreenNavigators.Core
 {
-    public class ScreenCloser : ScreenActioner 
+    public class ScreenOpenNotifier : ScreenActionNotifier 
     {
         private readonly IScreenPresenter _screenPresenter;
         
-        public ScreenCloser(IScreenNavigator screenNavigator, string screenIdToOpen, IScreenPresenter screenPresenter) : base(screenNavigator, screenIdToOpen)
+        public ScreenOpenNotifier(IScreenNavigator screenNavigator, string screenIdToOpen, IScreenPresenter screenPresenter) : base(screenNavigator, screenIdToOpen)
         {
             _screenPresenter = screenPresenter;
         }
 
         protected override void ExecuteAction()
         {
-            _screenPresenter.Close();
+            _screenPresenter.Present();
         }
 
         protected override void SubscribeToScreenNavigator(IScreenNavigator screenNavigator, Action<string> executeAction)
         {
-            screenNavigator.OnScreenClosed += executeAction;
+            screenNavigator.OnScreenOpened += executeAction;
         }
 
         protected override void UnsubscribeToScreenNavigator(IScreenNavigator screenNavigator, Action<string> executeAction)
         {
-            screenNavigator.OnScreenClosed -= executeAction;
+            screenNavigator.OnScreenOpened -= executeAction;
         }
     }
 }
