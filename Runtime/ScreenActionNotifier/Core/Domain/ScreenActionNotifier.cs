@@ -13,6 +13,8 @@ namespace ScreenNavigators.Core
             _screenIdToOpen = screenIdToOpen;
             SubscribeToScreenNavigator(_screenNavigator, Execute);
         }
+        
+        protected abstract void SubscribeToScreenNavigator(IScreenNavigator screenNavigator, Action<string> executeAction);
 
         private void Execute(string screenId)
         {
@@ -23,8 +25,6 @@ namespace ScreenNavigators.Core
         }
 
         protected abstract void ExecuteAction();
-
-        protected abstract void SubscribeToScreenNavigator(IScreenNavigator screenNavigator, Action<string> executeAction);
 
         public void Dispose()
         {
