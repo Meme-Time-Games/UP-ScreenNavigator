@@ -9,7 +9,6 @@ namespace ScreenNavigators.Core
         private readonly ICrudRepository<string, ScreenData> _screensRepository;
         
         private Dictionary<string, ScreenData> _openedScreens = new Dictionary<string, ScreenData>();
-        private List<ScreenData> _lockedScreens = new List<ScreenData>();
         
         public Action<string> OnScreenOpened { get; set; }
         public Action<string> OnScreenClosed { get; set; }
