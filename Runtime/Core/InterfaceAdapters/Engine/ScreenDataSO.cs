@@ -12,7 +12,7 @@ namespace ScreenNavigators.Core
 
         [Header("References")]
         [SerializeField] private ScreenDataSO[] _nestedScreens;
-        [SerializeField] private ScreenDataSO[] _closeScreens;
+        [SerializeField] private ScreenDataSO[] _toCloseScreens;
 
         public string ScreenId => _screenId;
 
@@ -24,10 +24,10 @@ namespace ScreenNavigators.Core
                 nestedScreenIds[i] = _nestedScreens[i].ScreenId;
             }
             
-            string[] closeScreenIds = new string[_closeScreens.Length];
-            for (int i = 0; i < _closeScreens.Length; i++)
+            string[] closeScreenIds = new string[_toCloseScreens.Length];
+            for (int i = 0; i < _toCloseScreens.Length; i++)
             {
-                closeScreenIds[i] = _closeScreens[i].ScreenId;
+                closeScreenIds[i] = _toCloseScreens[i].ScreenId;
             }
             
             return new ScreenData(_screenId, nestedScreenIds, closeScreenIds, _isLocked, _hasToCloseAllScreensOnOpen);

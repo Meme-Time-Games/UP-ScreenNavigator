@@ -5,12 +5,12 @@ namespace ScreenNavigators.Core
     public abstract class ScreenActionNotifier : IDisposable
     {
         private readonly IScreenNavigator _screenNavigator;
-        private readonly string _screenIdToOpen;
+        private readonly string _screenId;
 
-        protected ScreenActionNotifier(IScreenNavigator screenNavigator, string screenIdToOpen)
+        protected ScreenActionNotifier(IScreenNavigator screenNavigator, string screenId)
         {
             _screenNavigator = screenNavigator;
-            _screenIdToOpen = screenIdToOpen;
+            _screenId = screenId;
             SubscribeToScreenNavigator(_screenNavigator, Execute);
         }
         
@@ -18,7 +18,7 @@ namespace ScreenNavigators.Core
 
         private void Execute(string screenId)
         {
-            if(_screenIdToOpen != screenId)
+            if(_screenId != screenId)
                 return;
 
             ExecuteAction();

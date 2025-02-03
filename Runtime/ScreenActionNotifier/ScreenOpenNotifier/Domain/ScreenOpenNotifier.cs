@@ -6,7 +6,7 @@ namespace ScreenNavigators.Core
     {
         private readonly IScreenPresenter _screenPresenter;
         
-        public ScreenOpenNotifier(IScreenNavigator screenNavigator, string screenIdToOpen, IScreenPresenter screenPresenter) : base(screenNavigator, screenIdToOpen)
+        public ScreenOpenNotifier(IScreenNavigator screenNavigator, string screenId, IScreenPresenter screenPresenter) : base(screenNavigator, screenId)
         {
             _screenPresenter = screenPresenter;
         }

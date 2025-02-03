@@ -2,16 +2,16 @@
 
 namespace ScreenNavigators.Core
 {
-    public class SetActiveScreenPresenter : IActiveScreenPresenter
+    public class SetScreenActivatorPresenter : IScreenActivatorPresenter
     {
         private readonly GameObject _gameObject;
 
-        public SetActiveScreenPresenter(GameObject gameObject)
+        public SetScreenActivatorPresenter(GameObject gameObject)
         {
             _gameObject = gameObject;
         }
 
-        public void Active()
+        public void Activate()
         {
             _gameObject.SetActive(true);
         }

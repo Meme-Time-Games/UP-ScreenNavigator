@@ -3,14 +3,14 @@ using UnityEngine;
 
 namespace ScreenNavigators.Core
 {
-    public class SetActiveScreenPresenterInstaller : SingleMonoInstaller<IActiveScreenPresenter>
+    public class SetActiveScreenPresenterInstaller : SingleMonoInstaller<IScreenActivatorPresenter>
     {
         [Header("References")]
         [SerializeField] private GameObject _gameObjectToActivate;
         
-        protected override IActiveScreenPresenter GetData()
+        protected override IScreenActivatorPresenter GetData()
         {
-            return new SetActiveScreenPresenter(_gameObjectToActivate);
+            return new SetScreenActivatorPresenter(_gameObjectToActivate);
         }
     }
 }

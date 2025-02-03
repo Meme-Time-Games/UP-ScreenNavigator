@@ -20,7 +20,7 @@ namespace ScreenNavigators.Core
 
         public void Execute()
         {
-            foreach (var screenData in _screenData)
+            foreach (ScreenData screenData in _screenData)
             {
                 _screenNavigator.AddScreen(screenData);
             }

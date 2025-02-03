@@ -2,26 +2,26 @@
 {
     public class ActiveCloseScreenPresenter : IScreenPresenter
     {
-        private readonly IActiveScreenPresenter _activeScreenPresenter;
-        private readonly ICloseScreenPresenter _closeScreenPresenter;
+        private readonly IScreenActivatorPresenter _screenActivatorPresenter;
+        private readonly IScreenDeactivatorPresenter _screenDeactivatorPresenter;
         private readonly IScreenPresenter _screenPresenter;
 
-        public ActiveCloseScreenPresenter(IActiveScreenPresenter activeScreenPresenter, ICloseScreenPresenter closeScreenPresenter, IScreenPresenter screenPresenter)
+        public ActiveCloseScreenPresenter(IScreenActivatorPresenter screenActivatorPresenter, IScreenDeactivatorPresenter screenDeactivatorPresenter, IScreenPresenter screenPresenter)
         {
-            _activeScreenPresenter = activeScreenPresenter;
-            _closeScreenPresenter = closeScreenPresenter;
+            _screenActivatorPresenter = screenActivatorPresenter;
+            _screenDeactivatorPresenter = screenDeactivatorPresenter;
             _screenPresenter = screenPresenter;
         }
 
         public void Present()
         {
-            _activeScreenPresenter.Active();
+            _screenActivatorPresenter.Activate();
             _screenPresenter.Present();
         }
 
         public void Close()
         {
-            _closeScreenPresenter.Close();
+            _screenDeactivatorPresenter.Close();
         }
     }
 }

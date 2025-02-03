@@ -1,6 +1,6 @@
 ﻿namespace ScreenNavigators.Core
 {
-    public interface ICloseScreenPresenter
+    public interface IScreenDeactivatorPresenter
     {
         void Close();
     }

@@ -2,11 +2,11 @@
 
 namespace ScreenNavigators.Core
 {
-    public class SetActiveCloseScreenPresenter : ICloseScreenPresenter
+    public class SetActiveScreenDeactivatorPresenter : IScreenDeactivatorPresenter
     {
         private readonly GameObject _gameObject;
 
-        public SetActiveCloseScreenPresenter(GameObject gameObject)
+        public SetActiveScreenDeactivatorPresenter(GameObject gameObject)
         {
             _gameObject = gameObject;
         }

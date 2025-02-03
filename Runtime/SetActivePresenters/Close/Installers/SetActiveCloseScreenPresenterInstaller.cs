@@ -3,14 +3,14 @@ using UnityEngine;
 
 namespace ScreenNavigators.Core
 {
-    public class SetActiveCloseScreenPresenterInstaller : SingleMonoInstaller<ICloseScreenPresenter>
+    public class SetActiveCloseScreenPresenterInstaller : SingleMonoInstaller<IScreenDeactivatorPresenter>
     {
         [Header("References")]
         [SerializeField] private GameObject _gameObjectToActivate;
         
-        protected override ICloseScreenPresenter GetData()
+        protected override IScreenDeactivatorPresenter GetData()
         {
-            return new SetActiveCloseScreenPresenter(_gameObjectToActivate);
+            return new SetActiveScreenDeactivatorPresenter(_gameObjectToActivate);
         }
     }
 }

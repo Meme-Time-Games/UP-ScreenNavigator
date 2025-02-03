@@ -7,8 +7,8 @@ namespace ScreenNavigators.Core
     public class ScreenNavigator : IScreenNavigator
     {
         private readonly ICrudRepository<string, ScreenData> _screensRepository;
-        
-        private Dictionary<string, ScreenData> _openedScreens = new Dictionary<string, ScreenData>();
+
+        private Dictionary<string, ScreenData> _openedScreens;
         
         public Action<string> OnScreenOpened { get; set; }
         public Action<string> OnScreenClosed { get; set; }
@@ -16,6 +16,7 @@ namespace ScreenNavigators.Core
         public ScreenNavigator(ICrudRepository<string, ScreenData> screensRepository)
         {
             _screensRepository = screensRepository;
+            _openedScreens  = new Dictionary<string, ScreenData>();
         }
         
         public void AddScreen(ScreenData screenData)
@@ -37,7 +38,7 @@ namespace ScreenNavigators.Core
             _openedScreens.Add(screenId, screenData);
             
             OpenNestedScreens(screenData.NestedScreenIds);
-            CloseScreens(screenData.CloseScreenIds);
+            CloseScreens(screenData.ToCloseScreenIds);
             
             OnScreenOpened?.Invoke(screenData.ScreenId);
         }
@@ -61,7 +62,7 @@ namespace ScreenNavigators.Core
         private void CloseAllScreens()
         {
             IEnumerable<KeyValuePair<string, ScreenData>> allOpenedScreens = new List<KeyValuePair<string, ScreenData>>(_openedScreens);
-            foreach (var screenDataKeyValuePair in allOpenedScreens)
+            foreach (KeyValuePair<string, ScreenData> screenDataKeyValuePair in allOpenedScreens)
             {
                 CloseScreen(screenDataKeyValuePair.Key);
             }
@@ -81,7 +82,7 @@ namespace ScreenNavigators.Core
 
         private void CloseNestedScreens(string[] nestedScreens)
         {
-            foreach (var screenId in nestedScreens)
+            foreach (string screenId in nestedScreens)
             {
                 if (!_openedScreens.ContainsKey(screenId))
                     continue;
