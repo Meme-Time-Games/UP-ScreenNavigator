@@ -1,0 +1,26 @@
+﻿namespace ScreenNavigators.Core
+{
+    public class ScreenData
+    {
+        private readonly string _screenId;
+        private readonly string[] _nestedScreenIds;
+        private readonly string[] _toCloseScreenIds;
+        private readonly bool _isLocked;
+        private readonly bool _hasToCloseAllScreensOnOpen;
+        
+        public string ScreenId => _screenId;
+        public string[] NestedScreenIds => _nestedScreenIds;
+        public string[] ToCloseScreenIds => _toCloseScreenIds;
+        public bool IsLocked => _isLocked;
+        public bool HasToCloseAllScreensOnOpen => _hasToCloseAllScreensOnOpen;
+
+        public ScreenData(string screenId, string[] nestedScreenIds, string[] toCloseScreenIds, bool isLocked, bool hasToCloseAllScreensOnOpen)
+        {
+            _screenId = screenId;
+            _nestedScreenIds = nestedScreenIds;
+            _toCloseScreenIds = toCloseScreenIds;
+            _isLocked = isLocked;
+            _hasToCloseAllScreensOnOpen = hasToCloseAllScreensOnOpen;
+        }
+    }
+}
