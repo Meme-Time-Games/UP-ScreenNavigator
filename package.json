@@ -1,15 +1,13 @@
 {
   "name": "com.custom.screennavigator",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "displayName": "ScreenNavigator",
-  "description": "",
   "unity": "2020.3",
   "unityRelease": "0b5",
   "documentationUrl": "",
   "changelogUrl": "",
   "licensesUrl": "",
-  "keywords": [
-  ],
+  "keywords": [],
   "author": {
     "name": "custom",
     "email": "",
@@ -17,12 +15,11 @@
   },
   "type": "tool",
   "hideInEditor": false,
-  "samples": 
-[
-	{
-		"displayName": "Samples",
-		"description": "",
-		"path": "Samples~/ScreenNavigator"
-	}
-]
+  "samples": [
+    {
+      "displayName": "Samples",
+      "description": "",
+      "path": "Samples~/ScreenNavigator"
+    }
+  ]
 }
