@@ -1,14 +1,15 @@
-﻿using DependencyInjector.Core;
+﻿using Commands.Core;
+using DependencyInjector.Core;
 
 namespace ScreenNavigators.Core
 {
     public class ScreenCloseNotifierInstaller : ScreenActionNotifierInstaller
     {
-        [Inject] private IScreenPresenter _screenPresenter;
+        [Inject] private ICommand _command;
         
         protected override ScreenActionNotifier GetScreenActionNotifier(IScreenNavigator screenNavigator, string screenIdToOpen)
         {
-            return new ScreenCloseNotifier(screenNavigator, screenIdToOpen, _screenPresenter);
+            return new ScreenCloseCommandExecutor(screenNavigator, screenIdToOpen, _command);
         }
     }
 }

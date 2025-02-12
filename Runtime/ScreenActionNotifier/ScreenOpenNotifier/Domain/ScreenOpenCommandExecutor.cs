@@ -1,19 +1,20 @@
 ﻿using System;
+using Commands.Core;
 
 namespace ScreenNavigators.Core
 {
-    public class ScreenOpenNotifier : ScreenActionNotifier 
+    public class ScreenOpenCommandExecutor : ScreenActionNotifier 
     {
-        private readonly IScreenPresenter _screenPresenter;
+        private readonly ICommand _command;
         
-        public ScreenOpenNotifier(IScreenNavigator screenNavigator, string screenId, IScreenPresenter screenPresenter) : base(screenNavigator, screenId)
+        public ScreenOpenCommandExecutor(IScreenNavigator screenNavigator, string screenId, ICommand command) : base(screenNavigator, screenId)
         {
-            _screenPresenter = screenPresenter;
+            _command = command;
         }
 
         protected override void ExecuteAction()
         {
-            _screenPresenter.Present();
+            _command.Execute();
         }
 
         protected override void SubscribeToScreenNavigator(IScreenNavigator screenNavigator, Action<string> executeAction)

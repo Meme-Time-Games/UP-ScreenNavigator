@@ -1,7 +1,11 @@
 {
     "name": "Editor.ScreenNavigator",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "Runtime.ScreenNavigator",
+        "Runtime.ServiceLocator",
+        "Runtime.Singleton"
+    ],
     "includePlatforms": [
         "Editor"
     ],
