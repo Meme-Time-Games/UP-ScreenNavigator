@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using CrudRepository.Core;
+using UnityEngine;
 
 namespace ScreenNavigators.Core
 {
@@ -22,8 +23,11 @@ namespace ScreenNavigators.Core
         public void AddScreen(ScreenData screenData)
         {
             string screenId = screenData.ScreenId;
-            if(_screensRepository.IsThisContainedById(screenId))
-                throw new Exception("Screen with id " + screenId + " is already added.");
+            
+            if (_screensRepository.IsThisContainedById(screenId))
+            {
+                return;
+            }
             
             _screensRepository.Insert(screenId, screenData);
         }
