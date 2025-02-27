@@ -35,6 +35,11 @@ namespace ScreenNavigators.Core
         public void OpenScreen(string screenId)
         {
             ScreenData screenData = _screensRepository.GetById(screenId);
+
+            if (_openedScreens.ContainsKey(screenData.ScreenId))
+            {
+                return;
+            }
             
             if (screenData.HasToCloseAllScreensOnOpen)
                 CloseAllScreens();
