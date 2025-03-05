@@ -1,17 +1,18 @@
 ﻿using MVVM.Core;
 using MVVM.Core.InterfaceAdapters;
-using ScreenNavigators.Core;
 
 namespace ScreenActionNotifier.Core
 {
     public class ActiveCloseScreenController : Controller
     {
-        private IScreenPresenter _screenPresenter;
+        private readonly IEventViewModel _openScreenEventViewModel;
+        private readonly IEventViewModel _closeScreenEventiViewModel;
         private bool _isScreenActive;
         
-        public ActiveCloseScreenController(IEventViewModel eventViewModel, IScreenPresenter screenPresenter, bool isScreenActive) : base(eventViewModel)
+        public ActiveCloseScreenController(IEventViewModel openRequestEventViewModel, IEventViewModel openScreenEventViewModel, IEventViewModel closeScreenEventViewModel, bool isScreenActive) : base(openRequestEventViewModel)
         {
-            _screenPresenter = screenPresenter;
+            _openScreenEventViewModel = openScreenEventViewModel;
+            _closeScreenEventiViewModel = closeScreenEventViewModel;
             _isScreenActive = isScreenActive;
         }
 
@@ -19,13 +20,13 @@ namespace ScreenActionNotifier.Core
         {
             if (_isScreenActive)
             {
-                _screenPresenter.Close();
+                _closeScreenEventiViewModel.RaiseEvent();
                 _isScreenActive = false;
                 return;
             }
             
             _isScreenActive = true;
-            _screenPresenter.Present();
+            _openScreenEventViewModel.RaiseEvent();
         }
     }
 }
