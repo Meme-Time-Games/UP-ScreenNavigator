@@ -7,25 +7,27 @@ namespace ScreenNavigators.Core
     {
         private GameObject _gameObjectToClose;
         private Animator _animator;
+        private float _animationDuration;
+        private string _triggerName;
+        
         private WaitForSeconds _waitForSeconds;
-        private AnimationClip _animationClip;
 
-        public void Install(GameObject gameObjectToClose, Animator animator, AnimationClip animationClip)
+        public void Install(GameObject gameObjectToClose, Animator animator, float animationDuration, string triggerName)
         {
             _gameObjectToClose = gameObjectToClose;
             _animator = animator;
-            _animationClip = animationClip;
             
-            _waitForSeconds = new WaitForSeconds(animationClip.length);
+            _waitForSeconds = new WaitForSeconds(animationDuration);
+            _triggerName = triggerName;
         }
         
         public void Close()
         {
-            _animator.Play(_animationClip.name);
+            _animator.SetTrigger(_triggerName);
             StartCoroutine(CloseAfterTime());
         }
 
-        public IEnumerator CloseAfterTime()
+        private IEnumerator CloseAfterTime()
         {
             yield return _waitForSeconds;
             _gameObjectToClose.SetActive(false);
