@@ -6,16 +6,22 @@ namespace ScreenNavigators.Core
     public class AnimationScreenDeactivatorPresenter : MonoBehaviour, IScreenDeactivatorPresenter
     {
         private GameObject _gameObjectToClose;
+        private Animator _animator;
         private WaitForSeconds _waitForSeconds;
-        
-        public void Install(GameObject gameObjectToClose, float animationTime)
+        private AnimationClip _animationClip;
+
+        public void Install(GameObject gameObjectToClose, Animator animator, AnimationClip animationClip)
         {
             _gameObjectToClose = gameObjectToClose;
-            _waitForSeconds = new WaitForSeconds(animationTime);
+            _animator = animator;
+            _animationClip = animationClip;
+            
+            _waitForSeconds = new WaitForSeconds(animationClip.length);
         }
         
         public void Close()
         {
+            _animator.Play(_animationClip.name);
             StartCoroutine(CloseAfterTime());
         }
 
