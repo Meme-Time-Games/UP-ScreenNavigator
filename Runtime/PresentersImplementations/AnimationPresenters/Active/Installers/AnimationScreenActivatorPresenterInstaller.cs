@@ -10,7 +10,6 @@ namespace ScreenNavigators.Core
         [SerializeField] private Animator _animator;
         
         [Header("Config")]
-        [SerializeField] private AnimationClip _animationClip;
         [SerializeField] private string _triggerName; 
         
         protected override IScreenActivatorPresenter GetData()
