@@ -1,4 +1,5 @@
 ﻿using DependencyInjector.Installers;
+using MVVM.Core;
 using UnityEngine;
 
 namespace ScreenNavigators.Core
@@ -8,6 +9,7 @@ namespace ScreenNavigators.Core
         [Header("References")]
         [SerializeField] private GameObject _gameObjectToClose;
         [SerializeField] private Animator _animator;
+        [SerializeField] private EventViewModelSO _onScreenOpenedEventViewModelSO;
         
         [Header("Config")]
         [SerializeField] private AnimationClip _animationClip;
@@ -18,7 +20,8 @@ namespace ScreenNavigators.Core
             GameObject animationScreenDeactivatorPresenterGameObject = new GameObject("AnimationScreenDeactivatorPresenter");
             animationScreenDeactivatorPresenterGameObject.transform.parent = gameObject.transform;
             AnimationScreenDeactivatorPresenter animationScreenDeactivatorPresenter = animationScreenDeactivatorPresenterGameObject.AddComponent<AnimationScreenDeactivatorPresenter>();
-            animationScreenDeactivatorPresenter.Install(_gameObjectToClose, _animator, _animationClip.length, _triggerName);
+            animationScreenDeactivatorPresenter.Install(_gameObjectToClose, _animator, _animationClip.length, _triggerName,
+                _onScreenOpenedEventViewModelSO.GetEventViewModel());
             
             return animationScreenDeactivatorPresenter;
         }
