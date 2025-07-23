@@ -9,5 +9,6 @@ namespace ScreenNavigators.Core
         void AddScreen(ScreenData screenData);
         void OpenScreen(string screenId);
         void CloseScreen(string screenId);
+        bool IsScreenOpen(string characterCustomizationScreenName);
     }
 }

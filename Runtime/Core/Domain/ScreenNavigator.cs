@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using CrudRepository.Core;
-using UnityEngine;
 
 namespace ScreenNavigators.Core
 {
@@ -102,6 +101,12 @@ namespace ScreenNavigators.Core
                 
                 CloseScreen(screenId);
             }
+        }
+        
+        public bool IsScreenOpen(string screenId)
+        {
+            bool isOpen = _openedScreens.ContainsKey(screenId);
+            return isOpen;
         }
     }
 }
