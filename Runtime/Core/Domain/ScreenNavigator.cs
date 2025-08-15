@@ -67,7 +67,7 @@ namespace ScreenNavigators.Core
             }
         }
         
-        private void CloseAllScreens()
+        public void CloseAllScreens()
         {
             IEnumerable<KeyValuePair<string, ScreenData>> allOpenedScreens = new List<KeyValuePair<string, ScreenData>>(_openedScreens);
             foreach (KeyValuePair<string, ScreenData> screenDataKeyValuePair in allOpenedScreens)
