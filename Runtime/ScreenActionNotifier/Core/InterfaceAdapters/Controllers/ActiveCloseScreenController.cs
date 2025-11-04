@@ -1,5 +1,4 @@
-﻿using System;
-using MVVM.Core;
+﻿using MVVM.Core;
 using MVVM.Core.InterfaceAdapters;
 
 namespace ScreenActionNotifier.Core
