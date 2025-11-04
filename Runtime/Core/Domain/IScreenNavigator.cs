@@ -10,5 +10,9 @@ namespace ScreenNavigators.Core
         void OpenScreen(string screenId);
         void CloseScreen(string screenId);
         bool IsScreenOpen(string characterCustomizationScreenName);
+
+#if UNITY_EDITOR
+        string[] GetOpenScreenIds();
+#endif
     }
 }

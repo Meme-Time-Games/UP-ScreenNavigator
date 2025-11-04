@@ -108,5 +108,21 @@ namespace ScreenNavigators.Core
             bool isOpen = _openedScreens.ContainsKey(screenId);
             return isOpen;
         }
+
+#if UNITY_EDITOR
+        public string[] GetOpenScreenIds()
+        {
+            List<KeyValuePair<string, ScreenData>> allOpenedScreens = new List<KeyValuePair<string, ScreenData>>(_openedScreens);
+            string[] openedScreens = new string[allOpenedScreens.Count];
+            int index = 0;
+            foreach (var openedScreen in allOpenedScreens)
+            {
+                openedScreens[index] = openedScreen.Key;
+                index++;
+            }
+            
+            return openedScreens;
+        }
+#endif
     }
 }
