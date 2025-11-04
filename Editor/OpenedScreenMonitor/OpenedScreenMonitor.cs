@@ -1,4 +1,5 @@
 ﻿using System;
+using DependencyInjector.Core;
 using ScreenNavigators.Core;
 using ServiceLocatorPattern;
 using UnityEditor;
@@ -27,9 +28,12 @@ namespace ScreenNavigators.Editors
             {
                 GUILayout.Label("No ScreenNavigator instance found.");
 
-                if (ServiceLocatorInstance.Instance.IsContained<IScreenNavigator>())
+                if (ServiceLocatorInstance.Instance.IsContained<IDIContainer>())
                 {
-                    _screenNavigator = ServiceLocatorInstance.Instance.Get<IScreenNavigator>();
+                    IDIContainer container = ServiceLocatorInstance.Instance.Get<IDIContainer>();
+                    
+                    if(container.IsTypeContained(typeof(IScreenNavigator)))
+                        _screenNavigator = container.Get<IScreenNavigator>();
                 }
                 
                 return;
