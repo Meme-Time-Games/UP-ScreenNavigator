@@ -2,7 +2,7 @@
 
 namespace ScreenNavigators.Core
 {
-    [CreateAssetMenu(fileName = "-ScreenDataSO", menuName = "ScriptableObjects/ScreenDataSO")]
+    [CreateAssetMenu(fileName = "-ScreenDataSO", menuName = "ScriptableObjects/ScreenNavigator/Data/ScreenDataSO")]
     public class ScreenDataSO : ScriptableObject
     {
         [Header("Config")]
