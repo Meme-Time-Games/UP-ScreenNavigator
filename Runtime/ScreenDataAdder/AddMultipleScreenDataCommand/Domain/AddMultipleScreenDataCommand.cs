@@ -1,8 +1,9 @@
-﻿using Commands.Core;
+﻿using System;
+using Commands.Core;
 
 namespace ScreenNavigators.Core
 {
-    public class AddMultipleScreenDataCommand : ICommand
+    public class AddMultipleScreenDataCommand : ICommand, IDisposable
     {
         private readonly IScreenNavigator _screenNavigator;
         private readonly ScreenData[] _screenData;
@@ -24,6 +25,14 @@ namespace ScreenNavigators.Core
             {
                 _screenNavigator.AddScreen(screenData);
             }
+        }
+
+        public void Dispose()
+        {
+            foreach (ScreenData screenData in _screenData)
+            {
+                _screenNavigator.CloseScreen(screenData.ScreenId);
+            } 
         }
     }
 }
