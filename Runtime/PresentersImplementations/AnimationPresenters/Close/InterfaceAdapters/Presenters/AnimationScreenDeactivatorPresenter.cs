@@ -42,7 +42,10 @@ namespace ScreenNavigators.Core
             StopAllCoroutines();
             
             _isClosing = true;
-            
+
+            if (_animator == null)
+                return;
+
             _animator.SetTrigger(_triggerName);
             StartCoroutine(CloseAfterTime());
         }
@@ -50,10 +53,10 @@ namespace ScreenNavigators.Core
         private IEnumerator CloseAfterTime()
         {
             yield return _waitForSeconds;
-            
-            if(!_isClosing)
-                yield break;
-            
+
+            if (!_isClosing)
+                yield break; 
+
             _gameObjectToClose.SetActive(false);
             _isClosing = false;
         }

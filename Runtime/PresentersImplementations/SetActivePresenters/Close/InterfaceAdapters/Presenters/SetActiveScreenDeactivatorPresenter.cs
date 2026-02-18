@@ -13,6 +13,9 @@ namespace ScreenNavigators.Core
         
         public void Close()
         {
+            if (_gameObject == null)
+                return;
+
             _gameObject.SetActive(false);
         }
     }
