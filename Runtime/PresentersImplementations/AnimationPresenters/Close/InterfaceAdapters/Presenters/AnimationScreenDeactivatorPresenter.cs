@@ -29,7 +29,7 @@ namespace ScreenNavigators.Core
             _onScreenOpenedEventViewModel.OnEventRaised += StopClose;
         }
 
-        private void StopClose()
+        public void StopClose()
         {
             if(_isClosing) 
                 StopAllCoroutines();
