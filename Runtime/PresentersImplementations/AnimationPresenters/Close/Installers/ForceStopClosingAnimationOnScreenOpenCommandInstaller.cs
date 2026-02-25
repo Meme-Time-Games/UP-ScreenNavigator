@@ -8,14 +8,14 @@ namespace ScreenNavigators.Core
     {
         [Header("References")]
         [SerializeField] private ScreenDataSO _screenDataSO;
-        [SerializeField] private SingleMonoInstaller<AnimationScreenDeactivatorPresenter> _animationScreenDeactivatorPresenter;
+        [SerializeField] private MonoInstaller<IScreenDeactivatorPresenter> _animationScreenDeactivatorPresenter;
 
         [Inject] private IScreenNavigator _screenNavigator;
         
         protected override ForceStopClosingAnimationOnScreenOpenCommand GetData()
         {
             return new ForceStopClosingAnimationOnScreenOpenCommand(_screenNavigator, _screenDataSO.ScreenId,
-                _animationScreenDeactivatorPresenter.ServiceInstance);
+                (AnimationScreenDeactivatorPresenter)_animationScreenDeactivatorPresenter.ServiceInstance);
         }
     }
 }
