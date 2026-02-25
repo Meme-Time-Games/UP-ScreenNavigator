@@ -8,7 +8,7 @@ namespace ScreenNavigators.Core
     {
         [Header("References")]
         [SerializeField] private ScreenDataSO _screenDataSO;
-        [SerializeField] private MonoInstaller<AnimationScreenDeactivatorPresenter> _animationScreenDeactivatorPresenter;
+        [SerializeField] private SingleMonoInstaller<AnimationScreenDeactivatorPresenter> _animationScreenDeactivatorPresenter;
 
         [Inject] private IScreenNavigator _screenNavigator;
         
