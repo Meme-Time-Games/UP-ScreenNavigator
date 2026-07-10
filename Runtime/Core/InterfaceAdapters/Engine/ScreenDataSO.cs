@@ -2,6 +2,7 @@
 
 namespace ScreenNavigators.Core
 {
+    [Icon("Packages/com.custom.screennavigator/Editor/Icons/ScreenDataSO.png")]
     [CreateAssetMenu(fileName = "-ScreenDataSO", menuName = "ScriptableObjects/ScreenNavigator/Data/ScreenDataSO")]
     public class ScreenDataSO : ScriptableObject
     {
