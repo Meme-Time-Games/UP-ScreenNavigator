@@ -1,6 +1,4 @@
-using DependencyInjector.Core;
 using ScreenNavigators.Core;
-using ServiceLocatorPattern;
 using UnityEditor;
 using UnityEngine;
 
@@ -15,6 +13,8 @@ namespace ScreenNavigators.Editors
         private static readonly Color ClosedStatusColor = new Color(0.65f, 0.65f, 0.65f);
         private static readonly Color SeparatorColor = new Color(0.3f, 0.3f, 0.3f);
 
+        private readonly EditorScreenNavigatorProvider _navigatorProvider = new EditorScreenNavigatorProvider();
+
         private IScreenNavigator _screenNavigator;
 
         public override void OnInspectorGUI()
@@ -22,7 +22,7 @@ namespace ScreenNavigators.Editors
             DrawDefaultInspector();
             DrawControlsHeader();
 
-            _screenNavigator = GetScreenNavigator();
+            _screenNavigator = _navigatorProvider.GetScreenNavigator();
 
             DrawScreenControls();
             DrawMonitorButton();
@@ -96,8 +96,8 @@ namespace ScreenNavigators.Editors
         {
             EditorGUILayout.Space();
 
-            if (GUILayout.Button("Open Screen Monitor"))
-                OpenedScreenMonitor.GetWindow();
+            if (GUILayout.Button("Open Screen Map"))
+                ScreenMapWindow.ShowWindow();
         }
 
         private void DrawSeparator()
@@ -115,19 +115,6 @@ namespace ScreenNavigators.Editors
 
             GUI.backgroundColor = previousColor;
             return isClicked;
-        }
-
-        private IScreenNavigator GetScreenNavigator()
-        {
-            if (!ServiceLocatorInstance.Instance.IsContained<IDIContainer>())
-                return null;
-
-            IDIContainer container = ServiceLocatorInstance.Instance.Get<IDIContainer>();
-
-            if (!container.IsTypeContained(typeof(IScreenNavigator)))
-                return null;
-
-            return container.Get<IScreenNavigator>();
         }
     }
 }
