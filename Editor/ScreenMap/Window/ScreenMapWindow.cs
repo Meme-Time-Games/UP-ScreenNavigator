@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -7,6 +8,7 @@ namespace ScreenNavigators.Editors
     public class ScreenMapWindow : EditorWindow
     {
         private static readonly Color OpenColor = new Color(0.45f, 0.8f, 0.5f);
+        private static readonly Color SelectedRowColor = new Color(0.24f, 0.49f, 0.9f, 0.25f);
 
         private const float ListWidth = 240f;
 
@@ -14,11 +16,13 @@ namespace ScreenNavigators.Editors
         private readonly ScreenGraphValidator _validator = new ScreenGraphValidator();
         private readonly EditorScreenNavigatorProvider _navigatorProvider = new EditorScreenNavigatorProvider();
         private readonly ScreenWarningsPanel _warningsPanel = new ScreenWarningsPanel();
+        private readonly List<ScreenNode> _sortedNodes = new List<ScreenNode>();
 
         private OpenScreensProvider _openScreensProvider;
         private ScreenGraph _graph;
         private string _selectedScreenId;
         private string _searchText = "";
+        private bool _showOnlyOpen;
         private Vector2 _listScrollPosition;
         private Vector2 _detailScrollPosition;
 
@@ -54,7 +58,17 @@ namespace ScreenNavigators.Editors
         {
             _graph = _graphBuilder.Build();
             _validator.Validate(_graph);
+
+            _sortedNodes.Clear();
+            _sortedNodes.AddRange(_graph.Nodes);
+            _sortedNodes.Sort(CompareByScreenId);
+
             Repaint();
+        }
+
+        private int CompareByScreenId(ScreenNode first, ScreenNode second)
+        {
+            return string.Compare(first.ScreenId, second.ScreenId, StringComparison.OrdinalIgnoreCase);
         }
 
         private void OnGUI()
@@ -78,6 +92,7 @@ namespace ScreenNavigators.Editors
         {
             EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
             GUILayout.Label("Screens", EditorStyles.boldLabel);
+            _showOnlyOpen = GUILayout.Toggle(_showOnlyOpen, "Only open", EditorStyles.toolbarButton);
             GUILayout.FlexibleSpace();
 
             if (GUILayout.Button("Rebuild", EditorStyles.toolbarButton))
@@ -93,7 +108,7 @@ namespace ScreenNavigators.Editors
             _searchText = EditorGUILayout.TextField(_searchText, EditorStyles.toolbarSearchField);
 
             _listScrollPosition = EditorGUILayout.BeginScrollView(_listScrollPosition);
-            foreach (ScreenNode node in _graph.Nodes)
+            foreach (ScreenNode node in _sortedNodes)
             {
                 DrawListRow(context, node);
             }
@@ -104,14 +119,17 @@ namespace ScreenNavigators.Editors
 
         private void DrawListRow(ScreenMapContext context, ScreenNode node)
         {
-            if (!IsMatchingSearch(node.ScreenId))
+            if (!IsVisibleInList(context, node))
                 return;
 
-            EditorGUILayout.BeginHorizontal();
+            Rect rowRect = EditorGUILayout.BeginHorizontal();
+
+            if (node.ScreenId == _selectedScreenId)
+                EditorGUI.DrawRect(rowRect, SelectedRowColor);
 
             DrawOpenDot(context, node);
 
-            if (GUILayout.Button(GetListRowLabel(node), GetRowStyle(node)))
+            if (GUILayout.Button(GetListRowLabel(node), EditorStyles.label))
                 SetSelectedScreen(node.ScreenId);
 
             EditorGUILayout.EndHorizontal();
@@ -136,14 +154,6 @@ namespace ScreenNavigators.Editors
                 label = label + "  ⚠";
 
             return label;
-        }
-
-        private GUIStyle GetRowStyle(ScreenNode node)
-        {
-            if (node.ScreenId == _selectedScreenId)
-                return EditorStyles.toolbarButton;
-
-            return EditorStyles.label;
         }
 
         private void DrawDetailPanel(ScreenMapContext context)
@@ -181,6 +191,7 @@ namespace ScreenNavigators.Editors
 
             EditorGUILayout.EndHorizontal();
 
+            EditorGUILayout.LabelField(node.AssetPath, EditorStyles.miniLabel);
             DrawStatus(context, node);
             EditorGUILayout.Space();
         }
@@ -303,6 +314,14 @@ namespace ScreenNavigators.Editors
             }
 
             return sources;
+        }
+
+        private bool IsVisibleInList(ScreenMapContext context, ScreenNode node)
+        {
+            if (_showOnlyOpen && !context.IsScreenOpen(node.ScreenId))
+                return false;
+
+            return IsMatchingSearch(node.ScreenId);
         }
 
         private bool IsMatchingSearch(string screenId)

@@ -2,7 +2,15 @@
 
 Date: 2026-07-10
 Package: `com.custom.screennavigator` (`Packages/UP-ScreenNavigator`)
-Status: Approved for planning
+Status: Implemented (with a UX revision — see below)
+
+## Revision (2026-07-10): pivoted from three visual tabs to a master-detail inspector
+
+The original design below specified four tabs (Tree, GraphView node graph, IMGUI-bezier node graph, Monitor). After implementing and testing them in the Editor, all three visual views proved hard to read: the two node graphs became an unreadable hairball at real project sizes, and the flat tree wasn't much better. The GraphView tab also had unavoidable IMGUI/UIElements integration problems (blank rendering + a rebuild-per-frame freeze).
+
+**They were replaced by a single master-detail inspector** (no tabs): a searchable, alphabetically-sorted list of all screens on the left; a detail panel on the right showing the selected screen's flags, live open/closed status, asset path, and its **Opens / Closes** relationships plus the **reverse** relationships (**Opened by / Closed by**) computed from the graph edges — every related screen a clickable row that navigates. A collapsible Issues panel (Select pings the asset) and a "Only open" filter round it out.
+
+Everything below the model line is unchanged and still accurate: the `ScreenGraph`/`ScreenNode`/`ScreenEdge` model, `SerializedObject`-based `ScreenGraphBuilder`, `ScreenGraphValidator` (+ EditMode tests), and the centralized `EditorScreenNavigatorProvider`/`OpenScreensProvider`. What changed is only the presentation layer: the `IScreenMapTab` interface and the `ScreenTreeTabView`/`ScreenMonitorTabView`/`ScreenBezierTabView`/`ScreenGraphViewTabView`/`ScreenGraphElement` files were removed; `ScreenMapWindow` became the master-detail view; the live monitor is folded into the list's open-state dots + the "Only open" filter.
 
 ## Summary
 
