@@ -27,6 +27,7 @@ namespace ScreenNavigators.Editors
         private ToolbarSearchField _searchField;
         private ToolbarToggle _onlyOpenToggle;
         private ToolbarToggle _onlyIssuesToggle;
+        private ToolbarToggle _groupToggle;
         private ToolbarButton _rebuildButton;
         private Label _issueCountLabel;
 
@@ -116,6 +117,7 @@ namespace ScreenNavigators.Editors
 
             _onlyOpenToggle.text = "Open";
             _onlyIssuesToggle.text = "!";
+            _groupToggle.text = "≡";
             _rebuildButton.text = "⟳";
 
             _listPanel.SetCompactBadges();
@@ -127,6 +129,7 @@ namespace ScreenNavigators.Editors
 
             _onlyOpenToggle.text = "Only open";
             _onlyIssuesToggle.text = "Issues";
+            _groupToggle.text = "Group";
             _rebuildButton.text = "Rebuild";
 
             _listPanel.SetWideBadges();
@@ -189,6 +192,13 @@ namespace ScreenNavigators.Editors
             _onlyIssuesToggle.RegisterValueChangedCallback(changedEvent => ApplyFilter());
             toolbar.Add(_onlyIssuesToggle);
 
+            _groupToggle = new ToolbarToggle();
+            _groupToggle.text = "Group";
+            _groupToggle.tooltip = "Group screens by the feature folder they live in";
+            _groupToggle.SetValueWithoutNotify(true);
+            _groupToggle.RegisterValueChangedCallback(changedEvent => ApplyFilter());
+            toolbar.Add(_groupToggle);
+
             ToolbarSpacer spacer = new ToolbarSpacer();
             spacer.style.flexGrow = 1f;
             toolbar.Add(spacer);
@@ -250,7 +260,8 @@ namespace ScreenNavigators.Editors
             ScreenListFilter filter = new ScreenListFilter(
                 _searchField.value,
                 _onlyOpenToggle.value,
-                _onlyIssuesToggle.value);
+                _onlyIssuesToggle.value,
+                _groupToggle.value);
 
             _listPanel.ApplyFilter(filter);
         }

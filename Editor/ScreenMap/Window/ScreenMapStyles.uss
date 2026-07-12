@@ -129,6 +129,25 @@
     background-color: var(--sm-selected);
 }
 
+.list-row {
+    flex-grow: 1;
+    height: 100%;
+}
+
+.group-header {
+    height: 100%;
+    padding-left: 6px;
+    padding-right: 6px;
+    font-size: 9px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: var(--sm-muted);
+    -unity-text-align: middle-left;
+    background-color: var(--sm-card-soft);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--sm-border);
+}
+
 .screen-row {
     flex-direction: row;
     align-items: center;

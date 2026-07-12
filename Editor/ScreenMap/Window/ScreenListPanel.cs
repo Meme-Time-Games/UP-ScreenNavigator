@@ -12,6 +12,7 @@ namespace ScreenNavigators.Editors
 
         private readonly ListView _listView;
         private readonly List<ScreenListRow> _visibleRows = new List<ScreenListRow>();
+        private readonly ScreenGroupNameProvider _groupNameProvider = new ScreenGroupNameProvider();
 
         private ScreenMapContext _context;
         private bool _usesCompactBadges;
@@ -57,15 +58,15 @@ namespace ScreenNavigators.Editors
         {
             _visibleRows.Clear();
 
-            if (HasHierarchy(filter))
+            if (HasOpenHierarchy(filter))
             {
                 AddOpenHierarchyRows();
-                AddClosedRows(filter);
+                AddNodeRows(GetClosedScreens(filter), filter);
                 _listView.RefreshItems();
                 return;
             }
 
-            AddFlatRows(filter);
+            AddNodeRows(GetFilteredScreens(filter), filter);
             _listView.RefreshItems();
         }
 
@@ -88,6 +89,9 @@ namespace ScreenNavigators.Editors
         {
             for (int i = 0; i < _visibleRows.Count; i++)
             {
+                if (_visibleRows[i].IsGroupHeader())
+                    continue;
+
                 if (_visibleRows[i].Node.ScreenId == screenId)
                     return i;
             }
@@ -97,7 +101,101 @@ namespace ScreenNavigators.Editors
 
         /* ---------- row building ---------- */
 
-        private bool HasHierarchy(ScreenListFilter filter)
+        private void AddNodeRows(List<ScreenNode> nodes, ScreenListFilter filter)
+        {
+            if (filter.GroupsByFeature)
+            {
+                AddGroupedRows(nodes);
+                return;
+            }
+
+            AddFlatRows(nodes);
+        }
+
+        private void AddFlatRows(List<ScreenNode> nodes)
+        {
+            nodes.Sort(CompareByScreenId);
+
+            foreach (ScreenNode node in nodes)
+            {
+                _visibleRows.Add(ScreenListRow.CreateScreenRow(node, 0));
+            }
+        }
+
+        private void AddGroupedRows(List<ScreenNode> nodes)
+        {
+            Dictionary<string, List<ScreenNode>> groups = GetGroups(nodes);
+
+            List<string> groupNames = new List<string>(groups.Keys);
+            groupNames.Sort(CompareGroupNames);
+
+            foreach (string groupName in groupNames)
+            {
+                List<ScreenNode> groupNodes = groups[groupName];
+                groupNodes.Sort(CompareByScreenId);
+
+                _visibleRows.Add(ScreenListRow.CreateGroupHeader(groupName + "  " + groupNodes.Count));
+
+                foreach (ScreenNode node in groupNodes)
+                {
+                    _visibleRows.Add(ScreenListRow.CreateScreenRow(node, 1));
+                }
+            }
+        }
+
+        private Dictionary<string, List<ScreenNode>> GetGroups(List<ScreenNode> nodes)
+        {
+            Dictionary<string, List<ScreenNode>> groups = new Dictionary<string, List<ScreenNode>>();
+
+            foreach (ScreenNode node in nodes)
+            {
+                string groupName = _groupNameProvider.GetGroupName(node.AssetPath);
+
+                if (!groups.ContainsKey(groupName))
+                    groups.Add(groupName, new List<ScreenNode>());
+
+                groups[groupName].Add(node);
+            }
+
+            return groups;
+        }
+
+        private List<ScreenNode> GetFilteredScreens(ScreenListFilter filter)
+        {
+            List<ScreenNode> nodes = new List<ScreenNode>();
+
+            foreach (ScreenNode node in _context.Graph.Nodes)
+            {
+                if (!IsVisible(node, filter))
+                    continue;
+
+                nodes.Add(node);
+            }
+
+            return nodes;
+        }
+
+        private List<ScreenNode> GetClosedScreens(ScreenListFilter filter)
+        {
+            List<ScreenNode> nodes = new List<ScreenNode>();
+
+            if (filter.ShowsOnlyOpen)
+                return nodes;
+
+            foreach (ScreenNode node in _context.Graph.Nodes)
+            {
+                if (_context.IsScreenOpen(node.ScreenId))
+                    continue;
+
+                nodes.Add(node);
+            }
+
+            return nodes;
+        }
+
+        /* ---------- open hierarchy ---------- */
+
+        private bool HasOpenHierarchy(ScreenListFilter filter)
         {
             if (!string.IsNullOrEmpty(filter.SearchText))
                 return false;
@@ -121,13 +219,15 @@ namespace ScreenNavigators.Editors
 
         private void AddOpenHierarchyRows()
         {
+            _visibleRows.Add(ScreenListRow.CreateGroupHeader("OPEN"));
+
             List<ScreenNode> roots = GetOpenRoots();
             roots.Sort(CompareByScreenId);
 
             HashSet<string> visited = new HashSet<string>();
             foreach (ScreenNode root in roots)
             {
-                AddOpenBranchRows(root, 0, visited);
+                AddOpenBranchRows(root, 1, visited);
             }
         }
 
@@ -137,7 +237,7 @@ namespace ScreenNavigators.Editors
                 return;
 
             visited.Add(node.ScreenId);
-            _visibleRows.Add(new ScreenListRow(node, depth));
+            _visibleRows.Add(ScreenListRow.CreateScreenRow(node, depth));
 
             List<ScreenNode> children = GetOpenNestedChildren(node);
             children.Sort(CompareByScreenId);
@@ -222,72 +322,40 @@ namespace ScreenNavigators.Editors
             return children;
         }
 
-        private void AddClosedRows(ScreenListFilter filter)
-        {
-            if (filter.ShowsOnlyOpen)
-                return;
-
-            List<ScreenNode> closedScreens = new List<ScreenNode>();
-
-            foreach (ScreenNode node in _context.Graph.Nodes)
-            {
-                if (_context.IsScreenOpen(node.ScreenId))
-                    continue;
-
-                closedScreens.Add(node);
-            }
-
-            closedScreens.Sort(CompareByScreenId);
-
-            foreach (ScreenNode node in closedScreens)
-            {
-                _visibleRows.Add(new ScreenListRow(node, 0));
-            }
-        }
-
-        private void AddFlatRows(ScreenListFilter filter)
-        {
-            List<ScreenNode> nodes = new List<ScreenNode>();
-
-            foreach (ScreenNode node in _context.Graph.Nodes)
-            {
-                if (!IsVisible(node, filter))
-                    continue;
-
-                nodes.Add(node);
-            }
-
-            nodes.Sort(CompareByScreenId);
-
-            foreach (ScreenNode node in nodes)
-            {
-                _visibleRows.Add(new ScreenListRow(node, 0));
-            }
-        }
-
         /* ---------- row rendering ---------- */
 
         private VisualElement CreateRow()
         {
             VisualElement row = new VisualElement();
-            row.AddToClassList("screen-row");
+            row.AddToClassList("list-row");
+
+            Label groupHeader = new Label();
+            groupHeader.name = "group-header";
+            groupHeader.AddToClassList("group-header");
+            row.Add(groupHeader);
+
+            VisualElement content = new VisualElement();
+            content.name = "screen-content";
+            content.AddToClassList("screen-row");
 
             Label childMark = new Label("↳");
             childMark.name = "child-mark";
             childMark.AddToClassList("screen-row__child-mark");
-            row.Add(childMark);
+            content.Add(childMark);
 
             VisualElement statusDot = new VisualElement();
             statusDot.AddToClassList("status-dot");
-            row.Add(statusDot);
+            content.Add(statusDot);
 
             Label nameLabel = new Label();
             nameLabel.AddToClassList("screen-row__name");
-            row.Add(nameLabel);
+            content.Add(nameLabel);
 
-            row.Add(CreateBadge("warn"));
-            row.Add(CreateBadge("locked"));
-            row.Add(CreateBadge("closes-all"));
+            content.Add(CreateBadge("warn"));
+            content.Add(CreateBadge("locked"));
+            content.Add(CreateBadge("closes-all"));
+
+            row.Add(content);
 
             return row;
         }
@@ -303,32 +371,57 @@ namespace ScreenNavigators.Editors
         private void BindRow(VisualElement row, int index)
         {
             ScreenListRow listRow = _visibleRows[index];
-            ScreenNode node = listRow.Node;
 
-            row.style.paddingLeft = RowPadding + listRow.Depth * DepthIndent;
+            if (listRow.IsGroupHeader())
+            {
+                BindGroupHeader(row, listRow);
+                return;
+            }
 
-            BindChildMark(row, listRow);
-            BindStatusDot(row, node);
-            BindName(row, node);
-            BindWarnBadge(row, node);
-            BindLockedBadge(row, node);
-            BindClosesAllBadge(row, node);
+            BindScreenRow(row, listRow);
         }
 
-        private void BindChildMark(VisualElement row, ScreenListRow listRow)
+        private void BindGroupHeader(VisualElement row, ScreenListRow listRow)
         {
-            Label childMark = row.Q<Label>("child-mark");
+            Label groupHeader = row.Q<Label>("group-header");
+            groupHeader.text = listRow.GroupTitle;
+            groupHeader.RemoveFromClassList("is-hidden");
+
+            row.Q("screen-content").AddToClassList("is-hidden");
+        }
+
+        private void BindScreenRow(VisualElement row, ScreenListRow listRow)
+        {
+            row.Q<Label>("group-header").AddToClassList("is-hidden");
+
+            VisualElement content = row.Q("screen-content");
+            content.RemoveFromClassList("is-hidden");
+            content.style.paddingLeft = RowPadding + listRow.Depth * DepthIndent;
+
+            ScreenNode node = listRow.Node;
+
+            BindChildMark(content, listRow);
+            BindStatusDot(content, node);
+            BindName(content, node);
+            BindWarnBadge(content, node);
+            BindLockedBadge(content, node);
+            BindClosesAllBadge(content, node);
+        }
+
+        private void BindChildMark(VisualElement content, ScreenListRow listRow)
+        {
+            Label childMark = content.Q<Label>("child-mark");
             childMark.RemoveFromClassList("is-hidden");
 
-            if (listRow.Depth > 0)
+            if (listRow.Depth > 1)
                 return;
 
             childMark.AddToClassList("is-hidden");
         }
 
-        private void BindStatusDot(VisualElement row, ScreenNode node)
+        private void BindStatusDot(VisualElement content, ScreenNode node)
         {
-            VisualElement statusDot = row.Q(className: "status-dot");
+            VisualElement statusDot = content.Q(className: "status-dot");
             statusDot.RemoveFromClassList("status-dot--open");
             statusDot.tooltip = "Closed";
 
@@ -339,22 +432,24 @@ namespace ScreenNavigators.Editors
             statusDot.tooltip = "Open";
         }
 
-        private void BindName(VisualElement row, ScreenNode node)
+        private void BindName(VisualElement content, ScreenNode node)
         {
-            Label nameLabel = row.Q<Label>(className: "screen-row__name");
+            Label nameLabel = content.Q<Label>(className: "screen-row__name");
             nameLabel.RemoveFromClassList("screen-row__name--empty");
             nameLabel.text = node.ScreenId;
+            nameLabel.tooltip = node.ScreenId;
 
             if (!string.IsNullOrEmpty(node.ScreenId))
                 return;
 
             nameLabel.text = "(empty id)";
+            nameLabel.tooltip = node.AssetPath;
             nameLabel.AddToClassList("screen-row__name--empty");
         }
 
-        private void BindWarnBadge(VisualElement row, ScreenNode node)
+        private void BindWarnBadge(VisualElement content, ScreenNode node)
         {
-            Label badge = row.Q<Label>("warn");
+            Label badge = content.Q<Label>("warn");
             badge.text = "!";
             badge.tooltip = "Has validation issues";
             badge.AddToClassList("badge--warn");
@@ -366,9 +461,9 @@ namespace ScreenNavigators.Editors
             ShowBadge(badge);
         }
 
-        private void BindLockedBadge(VisualElement row, ScreenNode node)
+        private void BindLockedBadge(VisualElement content, ScreenNode node)
         {
-            Label badge = row.Q<Label>("locked");
+            Label badge = content.Q<Label>("locked");
             badge.text = GetLockedBadgeText();
             badge.tooltip = "Locked: nested closing skips this screen";
             HideBadge(badge);
@@ -387,9 +482,9 @@ namespace ScreenNavigators.Editors
             return "LOCK";
         }
 
-        private void BindClosesAllBadge(VisualElement row, ScreenNode node)
+        private void BindClosesAllBadge(VisualElement content, ScreenNode node)
         {
-            Label badge = row.Q<Label>("closes-all");
+            Label badge = content.Q<Label>("closes-all");
             badge.text = GetClosesAllBadgeText();
             badge.tooltip = "Closes every other screen when it opens";
             badge.AddToClassList("badge--close");
@@ -429,6 +524,9 @@ namespace ScreenNavigators.Editors
                 if (ReferenceEquals(listRow, null))
                     return;
 
+                if (listRow.IsGroupHeader())
+                    return;
+
                 OnScreenSelected?.Invoke(listRow.Node);
                 return;
             }
@@ -446,6 +544,9 @@ namespace ScreenNavigators.Editors
         private void PingScreen(ScreenListRow listRow)
         {
             if (ReferenceEquals(listRow, null))
+                return;
+
+            if (listRow.IsGroupHeader())
                 return;
 
             _context.PingScreen(listRow.Node.AssetPath);
@@ -500,6 +601,11 @@ namespace ScreenNavigators.Editors
         private int CompareByScreenId(ScreenNode first, ScreenNode second)
         {
             return string.Compare(first.ScreenId, second.ScreenId, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private int CompareGroupNames(string first, string second)
+        {
+            return string.Compare(first, second, StringComparison.OrdinalIgnoreCase);
         }
     }
 }
