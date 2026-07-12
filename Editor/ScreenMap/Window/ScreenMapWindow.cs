@@ -1,43 +1,52 @@
-using System;
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace ScreenNavigators.Editors
 {
     public class ScreenMapWindow : EditorWindow
     {
-        private static readonly Color OpenColor = new Color(0.45f, 0.8f, 0.5f);
-        private static readonly Color SelectedRowColor = new Color(0.24f, 0.49f, 0.9f, 0.25f);
+        private const string StyleSheetPath =
+            "Packages/com.custom.screennavigator/Editor/ScreenMap/Window/ScreenMapStyles.uss";
 
-        private const float ListWidth = 240f;
+        private const float NarrowWidthThreshold = 460f;
+        private const float ListPaneWidth = 240f;
+        private const float ListPaneHeight = 220f;
+        private const long OpenStateRefreshMilliseconds = 300;
 
         private readonly ScreenGraphBuilder _graphBuilder = new ScreenGraphBuilder();
         private readonly ScreenGraphValidator _validator = new ScreenGraphValidator();
         private readonly EditorScreenNavigatorProvider _navigatorProvider = new EditorScreenNavigatorProvider();
-        private readonly ScreenWarningsPanel _warningsPanel = new ScreenWarningsPanel();
-        private readonly List<ScreenNode> _sortedNodes = new List<ScreenNode>();
 
         private OpenScreensProvider _openScreensProvider;
+        private ScreenListPanel _listPanel;
+        private ScreenDetailPanel _detailPanel;
+        private VisualElement _body;
+        private ToolbarSearchField _searchField;
+        private ToolbarToggle _onlyOpenToggle;
+        private ToolbarToggle _onlyIssuesToggle;
+        private ToolbarButton _rebuildButton;
+        private Label _issueCountLabel;
+
         private ScreenGraph _graph;
+        private HashSet<string> _openScreenIds = new HashSet<string>();
         private string _selectedScreenId;
-        private string _searchText = "";
-        private bool _showOnlyOpen;
-        private Vector2 _listScrollPosition;
-        private Vector2 _detailScrollPosition;
+        private bool _isNarrowLayout;
+        private bool _hasResolvedLayout;
 
         [MenuItem("Tools/Screen Map")]
         public static void ShowWindow()
         {
             ScreenMapWindow window = GetWindow<ScreenMapWindow>();
             window.titleContent = new GUIContent("Screen Map");
+            window.minSize = new Vector2(200f, 240f);
             window.Show();
         }
 
         private void OnEnable()
         {
-            _openScreensProvider = new OpenScreensProvider(_navigatorProvider);
-            RebuildGraph();
             EditorApplication.projectChanged += RebuildGraph;
         }
 
@@ -46,307 +55,303 @@ namespace ScreenNavigators.Editors
             EditorApplication.projectChanged -= RebuildGraph;
         }
 
-        private void OnInspectorUpdate()
+        public void CreateGUI()
         {
-            if (!Application.isPlaying)
+            _openScreensProvider = new OpenScreensProvider(_navigatorProvider);
+
+            rootVisualElement.AddToClassList("screen-map");
+            ApplyTheme();
+            ApplyStyleSheet();
+
+            rootVisualElement.Add(CreateToolbar());
+            rootVisualElement.Add(CreateSearchRow());
+
+            _listPanel = new ScreenListPanel();
+            _listPanel.OnScreenSelected = HandleScreenSelected;
+
+            _detailPanel = new ScreenDetailPanel();
+            _detailPanel.OnScreenRequested = HandleScreenRequested;
+
+            _body = new VisualElement();
+            _body.AddToClassList("sm-body");
+            rootVisualElement.Add(_body);
+
+            BuildSplitView();
+            RebuildGraph();
+
+            rootVisualElement.RegisterCallback<GeometryChangedEvent>(HandleGeometryChanged);
+            rootVisualElement.schedule.Execute(RefreshOpenState).Every(OpenStateRefreshMilliseconds);
+        }
+
+        /* ---------- responsive layout ---------- */
+
+        private void HandleGeometryChanged(GeometryChangedEvent changedEvent)
+        {
+            bool isNarrow = changedEvent.newRect.width < NarrowWidthThreshold;
+
+            if (_hasResolvedLayout && isNarrow == _isNarrowLayout)
                 return;
 
-            Repaint();
+            _isNarrowLayout = isNarrow;
+            _hasResolvedLayout = true;
+
+            ApplyLayoutMode();
+            BuildSplitView();
         }
+
+        private void ApplyLayoutMode()
+        {
+            if (_isNarrowLayout)
+            {
+                ApplyCompactMode();
+                return;
+            }
+
+            ApplyWideMode();
+        }
+
+        private void ApplyCompactMode()
+        {
+            rootVisualElement.AddToClassList("compact");
+
+            _onlyOpenToggle.text = "Open";
+            _onlyIssuesToggle.text = "!";
+            _rebuildButton.text = "⟳";
+
+            _listPanel.SetCompactBadges();
+        }
+
+        private void ApplyWideMode()
+        {
+            rootVisualElement.RemoveFromClassList("compact");
+
+            _onlyOpenToggle.text = "Only open";
+            _onlyIssuesToggle.text = "Issues";
+            _rebuildButton.text = "Rebuild";
+
+            _listPanel.SetWideBadges();
+        }
+
+        private void BuildSplitView()
+        {
+            _body.Clear();
+
+            TwoPaneSplitView splitView = CreateSplitView();
+            splitView.Add(_listPanel);
+            splitView.Add(_detailPanel);
+
+            _body.Add(splitView);
+        }
+
+        private TwoPaneSplitView CreateSplitView()
+        {
+            if (_isNarrowLayout)
+                return new TwoPaneSplitView(0, ListPaneHeight, TwoPaneSplitViewOrientation.Vertical);
+
+            return new TwoPaneSplitView(0, ListPaneWidth, TwoPaneSplitViewOrientation.Horizontal);
+        }
+
+        /* ---------- chrome ---------- */
+
+        private void ApplyTheme()
+        {
+            if (EditorGUIUtility.isProSkin)
+            {
+                rootVisualElement.AddToClassList("theme-dark");
+                return;
+            }
+
+            rootVisualElement.AddToClassList("theme-light");
+        }
+
+        private void ApplyStyleSheet()
+        {
+            StyleSheet styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(StyleSheetPath);
+            if (ReferenceEquals(styleSheet, null))
+                return;
+
+            rootVisualElement.styleSheets.Add(styleSheet);
+        }
+
+        private VisualElement CreateToolbar()
+        {
+            Toolbar toolbar = new Toolbar();
+
+            _onlyOpenToggle = new ToolbarToggle();
+            _onlyOpenToggle.text = "Only open";
+            _onlyOpenToggle.tooltip = "Show only screens that are currently open in Play Mode";
+            _onlyOpenToggle.RegisterValueChangedCallback(changedEvent => ApplyFilter());
+            toolbar.Add(_onlyOpenToggle);
+
+            _onlyIssuesToggle = new ToolbarToggle();
+            _onlyIssuesToggle.text = "Issues";
+            _onlyIssuesToggle.tooltip = "Show only screens with validation issues";
+            _onlyIssuesToggle.RegisterValueChangedCallback(changedEvent => ApplyFilter());
+            toolbar.Add(_onlyIssuesToggle);
+
+            ToolbarSpacer spacer = new ToolbarSpacer();
+            spacer.style.flexGrow = 1f;
+            toolbar.Add(spacer);
+
+            _issueCountLabel = new Label();
+            _issueCountLabel.AddToClassList("sm-toolbar__count");
+            toolbar.Add(_issueCountLabel);
+
+            _rebuildButton = new ToolbarButton(RebuildGraph);
+            _rebuildButton.text = "Rebuild";
+            _rebuildButton.tooltip = "Rescan the project for ScreenDataSO assets";
+            toolbar.Add(_rebuildButton);
+
+            return toolbar;
+        }
+
+        private VisualElement CreateSearchRow()
+        {
+            VisualElement searchRow = new VisualElement();
+            searchRow.AddToClassList("sm-search-row");
+
+            _searchField = new ToolbarSearchField();
+            _searchField.AddToClassList("sm-search");
+            _searchField.RegisterValueChangedCallback(changedEvent => ApplyFilter());
+            searchRow.Add(_searchField);
+
+            return searchRow;
+        }
+
+        /* ---------- data ---------- */
 
         private void RebuildGraph()
         {
             _graph = _graphBuilder.Build();
             _validator.Validate(_graph);
 
-            _sortedNodes.Clear();
-            _sortedNodes.AddRange(_graph.Nodes);
-            _sortedNodes.Sort(CompareByScreenId);
+            if (ReferenceEquals(_listPanel, null))
+                return;
 
-            Repaint();
+            _openScreenIds = _openScreensProvider.GetOpenScreenIds();
+            UpdateContext();
+            ApplyFilter();
+            UpdateIssueCount();
+            RestoreSelection();
         }
 
-        private int CompareByScreenId(ScreenNode first, ScreenNode second)
+        private void UpdateContext()
         {
-            return string.Compare(first.ScreenId, second.ScreenId, StringComparison.OrdinalIgnoreCase);
+            ScreenMapContext context = new ScreenMapContext(_graph, _openScreenIds);
+            _listPanel.SetContext(context);
+            _detailPanel.SetContext(context);
         }
 
-        private void OnGUI()
+        private void ApplyFilter()
         {
-            DrawToolbar();
-
             if (ReferenceEquals(_graph, null))
                 return;
 
-            ScreenMapContext context = CreateContext();
+            ScreenListFilter filter = new ScreenListFilter(
+                _searchField.value,
+                _onlyOpenToggle.value,
+                _onlyIssuesToggle.value);
 
-            _warningsPanel.Draw(context);
-
-            EditorGUILayout.BeginHorizontal();
-            DrawScreenList(context);
-            DrawDetailPanel(context);
-            EditorGUILayout.EndHorizontal();
+            _listPanel.ApplyFilter(filter);
         }
 
-        private void DrawToolbar()
+        private void UpdateIssueCount()
         {
-            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-            GUILayout.Label("Screens", EditorStyles.boldLabel);
-            _showOnlyOpen = GUILayout.Toggle(_showOnlyOpen, "Only open", EditorStyles.toolbarButton);
-            GUILayout.FlexibleSpace();
+            int issueCount = GetIssueCount();
 
-            if (GUILayout.Button("Rebuild", EditorStyles.toolbarButton))
-                RebuildGraph();
+            _issueCountLabel.RemoveFromClassList("sm-toolbar__count--alert");
+            _issueCountLabel.text = "";
 
-            EditorGUILayout.EndHorizontal();
-        }
-
-        private void DrawScreenList(ScreenMapContext context)
-        {
-            EditorGUILayout.BeginVertical(GUILayout.Width(ListWidth));
-
-            _searchText = EditorGUILayout.TextField(_searchText, EditorStyles.toolbarSearchField);
-
-            _listScrollPosition = EditorGUILayout.BeginScrollView(_listScrollPosition);
-            foreach (ScreenNode node in _sortedNodes)
-            {
-                DrawListRow(context, node);
-            }
-            EditorGUILayout.EndScrollView();
-
-            EditorGUILayout.EndVertical();
-        }
-
-        private void DrawListRow(ScreenMapContext context, ScreenNode node)
-        {
-            if (!IsVisibleInList(context, node))
+            if (issueCount == 0)
                 return;
 
-            Rect rowRect = EditorGUILayout.BeginHorizontal();
-
-            if (node.ScreenId == _selectedScreenId)
-                EditorGUI.DrawRect(rowRect, SelectedRowColor);
-
-            DrawOpenDot(context, node);
-
-            if (GUILayout.Button(GetListRowLabel(node), EditorStyles.label))
-                SetSelectedScreen(node.ScreenId);
-
-            EditorGUILayout.EndHorizontal();
+            _issueCountLabel.text = issueCount.ToString();
+            _issueCountLabel.tooltip = issueCount + " validation issue(s)";
+            _issueCountLabel.AddToClassList("sm-toolbar__count--alert");
         }
 
-        private void DrawOpenDot(ScreenMapContext context, ScreenNode node)
+        private int GetIssueCount()
         {
-            string dot = " ";
-            if (context.IsScreenOpen(node.ScreenId))
-                dot = "●";
+            int count = 0;
+            foreach (ScreenNode node in _graph.Nodes)
+            {
+                count += node.Issues.Count;
+            }
 
-            Color previousColor = GUI.color;
-            GUI.color = OpenColor;
-            GUILayout.Label(dot, GUILayout.Width(14f));
-            GUI.color = previousColor;
+            return count;
         }
 
-        private string GetListRowLabel(ScreenNode node)
+        private void RefreshOpenState()
         {
-            string label = GetDisplayId(node.ScreenId);
-            if (node.HasIssues())
-                label = label + "  ⚠";
+            if (ReferenceEquals(_graph, null))
+                return;
 
-            return label;
+            HashSet<string> openScreenIds = _openScreensProvider.GetOpenScreenIds();
+            if (openScreenIds.SetEquals(_openScreenIds))
+                return;
+
+            _openScreenIds = openScreenIds;
+            UpdateContext();
+            ApplyFilter();
+            RefreshDetail();
         }
 
-        private void DrawDetailPanel(ScreenMapContext context)
+        private void RefreshDetail()
         {
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            ScreenNode node = GetNodeById(_selectedScreenId);
+            if (ReferenceEquals(node, null))
+                return;
 
-            ScreenNode node = GetSelectedNode();
+            _detailPanel.ShowScreen(node);
+        }
+
+        private void RestoreSelection()
+        {
+            ScreenNode node = GetNodeById(_selectedScreenId);
             if (ReferenceEquals(node, null))
             {
-                EditorGUILayout.LabelField("Select a screen to see its relationships.");
-                EditorGUILayout.EndVertical();
+                _detailPanel.ShowEmptyState();
                 return;
             }
 
-            _detailScrollPosition = EditorGUILayout.BeginScrollView(_detailScrollPosition);
-
-            DrawDetailHeader(context, node);
-            DrawRelationship("Opens →", node.NestedScreenIds);
-            DrawRelationship("Closes →", node.ToCloseScreenIds);
-            DrawRelationship("Opened by ←", GetOpenedBy(node.ScreenId));
-            DrawRelationship("Closed by ←", GetClosedBy(node.ScreenId));
-            DrawDetailIssues(node);
-
-            EditorGUILayout.EndScrollView();
-            EditorGUILayout.EndVertical();
+            _listPanel.SelectScreen(_selectedScreenId);
+            _detailPanel.ShowScreen(node);
         }
 
-        private void DrawDetailHeader(ScreenMapContext context, ScreenNode node)
+        /* ---------- interaction ---------- */
+
+        private void HandleScreenSelected(ScreenNode node)
         {
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField(GetDetailTitle(node), EditorStyles.boldLabel);
-
-            if (GUILayout.Button("Select asset", GUILayout.Width(90f)))
-                context.PingScreen(node.AssetPath);
-
-            EditorGUILayout.EndHorizontal();
-
-            EditorGUILayout.LabelField(node.AssetPath, EditorStyles.miniLabel);
-            DrawStatus(context, node);
-            EditorGUILayout.Space();
-        }
-
-        private string GetDetailTitle(ScreenNode node)
-        {
-            string title = GetDisplayId(node.ScreenId);
-            if (node.IsLocked)
-                title = title + "   [locked]";
-
-            if (node.ClosesAllScreensOnOpen)
-                title = title + "   [closeAllOnOpen]";
-
-            return title;
-        }
-
-        private void DrawStatus(ScreenMapContext context, ScreenNode node)
-        {
-            string status = "Closed";
-            Color color = Color.gray;
-            if (context.IsScreenOpen(node.ScreenId))
-            {
-                status = "Open";
-                color = OpenColor;
-            }
-
-            Color previousColor = GUI.color;
-            GUI.color = color;
-            EditorGUILayout.LabelField("Status: " + status);
-            GUI.color = previousColor;
-        }
-
-        private void DrawRelationship(string label, IReadOnlyList<string> screenIds)
-        {
-            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
-
-            if (screenIds.Count == 0)
-            {
-                EditorGUILayout.LabelField("   (none)");
-                EditorGUILayout.Space();
-                return;
-            }
-
-            foreach (string screenId in screenIds)
-            {
-                DrawRelationshipRow(screenId);
-            }
-
-            EditorGUILayout.Space();
-        }
-
-        private void DrawRelationshipRow(string screenId)
-        {
-            if (GUILayout.Button("   " + GetDisplayId(screenId), EditorStyles.label))
-                SetSelectedScreen(screenId);
-        }
-
-        private void DrawDetailIssues(ScreenNode node)
-        {
-            if (!node.HasIssues())
+            if (ReferenceEquals(node, null))
                 return;
 
-            EditorGUILayout.LabelField("Issues", EditorStyles.boldLabel);
-            foreach (ValidationIssue issue in node.Issues)
-            {
-                EditorGUILayout.HelpBox(issue.Message, GetMessageType(issue.Severity));
-            }
+            _selectedScreenId = node.ScreenId;
+            _detailPanel.ShowScreen(node);
         }
 
-        private MessageType GetMessageType(ValidationSeverity severity)
+        private void HandleScreenRequested(string screenId)
         {
-            if (severity == ValidationSeverity.Error)
-                return MessageType.Error;
+            ScreenNode node = GetNodeById(screenId);
+            if (ReferenceEquals(node, null))
+                return;
 
-            return MessageType.Warning;
+            _selectedScreenId = screenId;
+            _listPanel.SelectScreen(screenId);
+            _detailPanel.ShowScreen(node);
         }
 
-        private ScreenNode GetSelectedNode()
+        private ScreenNode GetNodeById(string screenId)
         {
-            if (string.IsNullOrEmpty(_selectedScreenId))
+            if (string.IsNullOrEmpty(screenId))
                 return null;
 
             foreach (ScreenNode node in _graph.Nodes)
             {
-                if (node.ScreenId == _selectedScreenId)
+                if (node.ScreenId == screenId)
                     return node;
             }
 
             return null;
-        }
-
-        private void SetSelectedScreen(string screenId)
-        {
-            _selectedScreenId = screenId;
-            GUI.FocusControl(null);
-        }
-
-        private List<string> GetOpenedBy(string screenId)
-        {
-            return GetSources(screenId, ScreenEdgeKind.Opens);
-        }
-
-        private List<string> GetClosedBy(string screenId)
-        {
-            return GetSources(screenId, ScreenEdgeKind.Closes);
-        }
-
-        private List<string> GetSources(string screenId, ScreenEdgeKind kind)
-        {
-            List<string> sources = new List<string>();
-            foreach (ScreenEdge edge in _graph.Edges)
-            {
-                if (edge.Kind != kind)
-                    continue;
-
-                if (edge.ToScreenId != screenId)
-                    continue;
-
-                sources.Add(edge.FromScreenId);
-            }
-
-            return sources;
-        }
-
-        private bool IsVisibleInList(ScreenMapContext context, ScreenNode node)
-        {
-            if (_showOnlyOpen && !context.IsScreenOpen(node.ScreenId))
-                return false;
-
-            return IsMatchingSearch(node.ScreenId);
-        }
-
-        private bool IsMatchingSearch(string screenId)
-        {
-            if (string.IsNullOrEmpty(_searchText))
-                return true;
-
-            if (string.IsNullOrEmpty(screenId))
-                return false;
-
-            return screenId.ToLowerInvariant().Contains(_searchText.ToLowerInvariant());
-        }
-
-        private string GetDisplayId(string screenId)
-        {
-            if (string.IsNullOrEmpty(screenId))
-                return "(empty id)";
-
-            return screenId;
-        }
-
-        private ScreenMapContext CreateContext()
-        {
-            HashSet<string> openScreenIds = _openScreensProvider.GetOpenScreenIds();
-            return new ScreenMapContext(_graph, openScreenIds);
         }
     }
 }
