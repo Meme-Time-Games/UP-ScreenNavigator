@@ -31,9 +31,15 @@ namespace ScreenNavigators.Editors
         private ToolbarButton _rebuildButton;
         private Label _issueCountLabel;
 
+        [SerializeField] private string _searchText = "";
+        [SerializeField] private bool _showsOnlyOpen;
+        [SerializeField] private bool _showsOnlyIssues;
+        [SerializeField] private bool _groupsByFeature = true;
+        [SerializeField] private List<string> _collapsedGroups = new List<string>();
+        [SerializeField] private string _selectedScreenId;
+
         private ScreenGraph _graph;
         private HashSet<string> _openScreenIds = new HashSet<string>();
-        private string _selectedScreenId;
         private bool _isNarrowLayout;
         private bool _hasResolvedLayout;
 
@@ -69,6 +75,7 @@ namespace ScreenNavigators.Editors
 
             _listPanel = new ScreenListPanel();
             _listPanel.OnScreenSelected = HandleScreenSelected;
+            _listPanel.OnCollapsedGroupsChanged = HandleCollapsedGroupsChanged;
 
             _detailPanel = new ScreenDetailPanel();
             _detailPanel.OnScreenRequested = HandleScreenRequested;
@@ -78,6 +85,7 @@ namespace ScreenNavigators.Editors
             rootVisualElement.Add(_body);
 
             BuildSplitView();
+            RestoreUiState();
             RebuildGraph();
 
             rootVisualElement.RegisterCallback<GeometryChangedEvent>(HandleGeometryChanged);
@@ -183,20 +191,19 @@ namespace ScreenNavigators.Editors
             _onlyOpenToggle = new ToolbarToggle();
             _onlyOpenToggle.text = "Only open";
             _onlyOpenToggle.tooltip = "Show only screens that are currently open in Play Mode";
-            _onlyOpenToggle.RegisterValueChangedCallback(changedEvent => ApplyFilter());
+            _onlyOpenToggle.RegisterValueChangedCallback(HandleOnlyOpenChanged);
             toolbar.Add(_onlyOpenToggle);
 
             _onlyIssuesToggle = new ToolbarToggle();
             _onlyIssuesToggle.text = "Issues";
             _onlyIssuesToggle.tooltip = "Show only screens with validation issues";
-            _onlyIssuesToggle.RegisterValueChangedCallback(changedEvent => ApplyFilter());
+            _onlyIssuesToggle.RegisterValueChangedCallback(HandleOnlyIssuesChanged);
             toolbar.Add(_onlyIssuesToggle);
 
             _groupToggle = new ToolbarToggle();
             _groupToggle.text = "Group";
             _groupToggle.tooltip = "Group screens by the feature folder they live in";
-            _groupToggle.SetValueWithoutNotify(true);
-            _groupToggle.RegisterValueChangedCallback(changedEvent => ApplyFilter());
+            _groupToggle.RegisterValueChangedCallback(HandleGroupChanged);
             toolbar.Add(_groupToggle);
 
             ToolbarSpacer spacer = new ToolbarSpacer();
@@ -222,10 +229,49 @@ namespace ScreenNavigators.Editors
 
             _searchField = new ToolbarSearchField();
             _searchField.AddToClassList("sm-search");
-            _searchField.RegisterValueChangedCallback(changedEvent => ApplyFilter());
+            _searchField.RegisterValueChangedCallback(HandleSearchChanged);
             searchRow.Add(_searchField);
 
             return searchRow;
+        }
+
+        private void HandleSearchChanged(ChangeEvent<string> changedEvent)
+        {
+            _searchText = changedEvent.newValue;
+            ApplyFilter();
+        }
+
+        private void HandleOnlyOpenChanged(ChangeEvent<bool> changedEvent)
+        {
+            _showsOnlyOpen = changedEvent.newValue;
+            ApplyFilter();
+        }
+
+        private void HandleOnlyIssuesChanged(ChangeEvent<bool> changedEvent)
+        {
+            _showsOnlyIssues = changedEvent.newValue;
+            ApplyFilter();
+        }
+
+        private void HandleGroupChanged(ChangeEvent<bool> changedEvent)
+        {
+            _groupsByFeature = changedEvent.newValue;
+            ApplyFilter();
+        }
+
+        private void HandleCollapsedGroupsChanged()
+        {
+            _collapsedGroups = _listPanel.GetCollapsedGroups();
+        }
+
+        private void RestoreUiState()
+        {
+            _searchField.SetValueWithoutNotify(_searchText);
+            _onlyOpenToggle.SetValueWithoutNotify(_showsOnlyOpen);
+            _onlyIssuesToggle.SetValueWithoutNotify(_showsOnlyIssues);
+            _groupToggle.SetValueWithoutNotify(_groupsByFeature);
+
+            _listPanel.SetCollapsedGroups(_collapsedGroups);
         }
 
         /* ---------- data ---------- */
@@ -258,10 +304,10 @@ namespace ScreenNavigators.Editors
                 return;
 
             ScreenListFilter filter = new ScreenListFilter(
-                _searchField.value,
-                _onlyOpenToggle.value,
-                _onlyIssuesToggle.value,
-                _groupToggle.value);
+                _searchText,
+                _showsOnlyOpen,
+                _showsOnlyIssues,
+                _groupsByFeature);
 
             _listPanel.ApplyFilter(filter);
         }

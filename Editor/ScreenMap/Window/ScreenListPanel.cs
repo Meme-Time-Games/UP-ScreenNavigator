@@ -10,14 +10,19 @@ namespace ScreenNavigators.Editors
         private const float RowPadding = 8f;
         private const float DepthIndent = 14f;
 
+        private const string OpenGroupName = "OPEN";
+
         private readonly ListView _listView;
         private readonly List<ScreenListRow> _visibleRows = new List<ScreenListRow>();
         private readonly ScreenGroupNameProvider _groupNameProvider = new ScreenGroupNameProvider();
+        private readonly HashSet<string> _collapsedGroups = new HashSet<string>();
 
         private ScreenMapContext _context;
+        private ScreenListFilter _currentFilter;
         private bool _usesCompactBadges;
 
         public Action<ScreenNode> OnScreenSelected { get; set; }
+        public Action OnCollapsedGroupsChanged { get; set; }
 
         public ScreenListPanel()
         {
@@ -42,6 +47,21 @@ namespace ScreenNavigators.Editors
             _context = context;
         }
 
+        public void SetCollapsedGroups(List<string> groupNames)
+        {
+            _collapsedGroups.Clear();
+
+            foreach (string groupName in groupNames)
+            {
+                _collapsedGroups.Add(groupName);
+            }
+        }
+
+        public List<string> GetCollapsedGroups()
+        {
+            return new List<string>(_collapsedGroups);
+        }
+
         public void SetCompactBadges()
         {
             _usesCompactBadges = true;
@@ -56,18 +76,46 @@ namespace ScreenNavigators.Editors
 
         public void ApplyFilter(ScreenListFilter filter)
         {
+            _currentFilter = filter;
+            RebuildRows();
+        }
+
+        private void RebuildRows()
+        {
+            if (ReferenceEquals(_currentFilter, null))
+                return;
+
             _visibleRows.Clear();
 
-            if (HasOpenHierarchy(filter))
+            if (HasOpenHierarchy(_currentFilter))
             {
                 AddOpenHierarchyRows();
-                AddNodeRows(GetClosedScreens(filter), filter);
+                AddNodeRows(GetClosedScreens(_currentFilter), _currentFilter);
                 _listView.RefreshItems();
                 return;
             }
 
-            AddNodeRows(GetFilteredScreens(filter), filter);
+            AddNodeRows(GetFilteredScreens(_currentFilter), _currentFilter);
             _listView.RefreshItems();
+        }
+
+        private void ToggleGroup(string groupName)
+        {
+            if (_collapsedGroups.Contains(groupName))
+            {
+                _collapsedGroups.Remove(groupName);
+                HandleCollapsedGroupsChanged();
+                return;
+            }
+
+            _collapsedGroups.Add(groupName);
+            HandleCollapsedGroupsChanged();
+        }
+
+        private void HandleCollapsedGroupsChanged()
+        {
+            RebuildRows();
+            OnCollapsedGroupsChanged?.Invoke();
         }
 
         public void RefreshRows()
@@ -134,7 +182,10 @@ namespace ScreenNavigators.Editors
                 List<ScreenNode> groupNodes = groups[groupName];
                 groupNodes.Sort(CompareByScreenId);
 
-                _visibleRows.Add(ScreenListRow.CreateGroupHeader(groupName + "  " + groupNodes.Count));
+                _visibleRows.Add(ScreenListRow.CreateGroupHeader(groupName));
+
+                if (_collapsedGroups.Contains(groupName))
+                    continue;
 
                 foreach (ScreenNode node in groupNodes)
                 {
@@ -219,7 +270,10 @@ namespace ScreenNavigators.Editors
 
         private void AddOpenHierarchyRows()
         {
-            _visibleRows.Add(ScreenListRow.CreateGroupHeader("OPEN"));
+            _visibleRows.Add(ScreenListRow.CreateGroupHeader(OpenGroupName));
+
+            if (_collapsedGroups.Contains(OpenGroupName))
+                return;
 
             List<ScreenNode> roots = GetOpenRoots();
             roots.Sort(CompareByScreenId);
@@ -332,6 +386,7 @@ namespace ScreenNavigators.Editors
             Label groupHeader = new Label();
             groupHeader.name = "group-header";
             groupHeader.AddToClassList("group-header");
+            groupHeader.RegisterCallback<ClickEvent>(HandleGroupHeaderClicked);
             row.Add(groupHeader);
 
             VisualElement content = new VisualElement();
@@ -384,10 +439,38 @@ namespace ScreenNavigators.Editors
         private void BindGroupHeader(VisualElement row, ScreenListRow listRow)
         {
             Label groupHeader = row.Q<Label>("group-header");
-            groupHeader.text = listRow.GroupTitle;
+            groupHeader.userData = listRow.GroupName;
+            groupHeader.text = GetGroupHeaderText(listRow);
+            groupHeader.tooltip = "Click to collapse or expand";
             groupHeader.RemoveFromClassList("is-hidden");
 
             row.Q("screen-content").AddToClassList("is-hidden");
+        }
+
+        private string GetGroupHeaderText(ScreenListRow listRow)
+        {
+            return GetFoldoutArrow(listRow.GroupName) + "  " + listRow.GroupName;
+        }
+
+        private string GetFoldoutArrow(string groupName)
+        {
+            if (_collapsedGroups.Contains(groupName))
+                return "▶";
+
+            return "▼";
+        }
+
+        private void HandleGroupHeaderClicked(ClickEvent clickEvent)
+        {
+            Label groupHeader = clickEvent.currentTarget as Label;
+            if (ReferenceEquals(groupHeader, null))
+                return;
+
+            string groupName = groupHeader.userData as string;
+            if (string.IsNullOrEmpty(groupName))
+                return;
+
+            ToggleGroup(groupName);
         }
 
         private void BindScreenRow(VisualElement row, ScreenListRow listRow)

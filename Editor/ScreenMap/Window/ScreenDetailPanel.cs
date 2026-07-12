@@ -80,15 +80,6 @@ namespace ScreenNavigators.Editors
             title.AddToClassList("detail__title");
             titleRow.Add(title);
 
-            VisualElement spacer = new VisualElement();
-            spacer.AddToClassList("detail__spacer");
-            titleRow.Add(spacer);
-
-            Button selectButton = new Button(() => _context.PingScreen(node.AssetPath));
-            selectButton.text = "Select asset";
-            selectButton.AddToClassList("detail__select-button");
-            titleRow.Add(selectButton);
-
             header.Add(titleRow);
             header.Add(CreateMetaRow(node));
 

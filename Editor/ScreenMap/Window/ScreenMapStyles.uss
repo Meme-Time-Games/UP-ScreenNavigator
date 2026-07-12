@@ -88,15 +88,6 @@
     text-overflow: clip;
 }
 
-.compact .detail__spacer {
-    flex-grow: 0;
-}
-
-.compact .detail__select-button {
-    margin-top: 5px;
-    margin-left: 0;
-}
-
 .compact .detail__body {
     padding-left: 10px;
     padding-right: 10px;
@@ -146,6 +137,11 @@
     background-color: var(--sm-card-soft);
     border-bottom-width: 1px;
     border-bottom-color: var(--sm-border);
+}
+
+.group-header:hover {
+    background-color: var(--sm-hover);
+    color: var(--sm-text-strong);
 }
 
 .screen-row {
@@ -271,10 +267,6 @@
     text-overflow: ellipsis;
 }
 
-.detail__spacer {
-    flex-grow: 1;
-}
-
 .detail__meta {
     flex-direction: row;
     align-items: center;
@@ -309,13 +301,6 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-}
-
-.detail__select-button {
-    height: 20px;
-    padding-left: 10px;
-    padding-right: 10px;
-    font-size: 11px;
 }
 
 /* ---------- relationship cards ---------- */

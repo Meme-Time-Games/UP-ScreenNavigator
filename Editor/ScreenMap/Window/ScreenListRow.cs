@@ -4,17 +4,17 @@ namespace ScreenNavigators.Editors
     {
         private readonly ScreenNode _node;
         private readonly int _depth;
-        private readonly string _groupTitle;
+        private readonly string _groupName;
 
         public ScreenNode Node => _node;
         public int Depth => _depth;
-        public string GroupTitle => _groupTitle;
+        public string GroupName => _groupName;
 
-        private ScreenListRow(ScreenNode node, int depth, string groupTitle)
+        private ScreenListRow(ScreenNode node, int depth, string groupName)
         {
             _node = node;
             _depth = depth;
-            _groupTitle = groupTitle;
+            _groupName = groupName;
         }
 
         public static ScreenListRow CreateScreenRow(ScreenNode node, int depth)
@@ -22,14 +22,14 @@ namespace ScreenNavigators.Editors
             return new ScreenListRow(node, depth, null);
         }
 
-        public static ScreenListRow CreateGroupHeader(string groupTitle)
+        public static ScreenListRow CreateGroupHeader(string groupName)
         {
-            return new ScreenListRow(null, 0, groupTitle);
+            return new ScreenListRow(null, 0, groupName);
         }
 
         public bool IsGroupHeader()
         {
-            return !string.IsNullOrEmpty(_groupTitle);
+            return !string.IsNullOrEmpty(_groupName);
         }
     }
 }
